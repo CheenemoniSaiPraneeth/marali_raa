@@ -11,7 +11,15 @@ DATA_FILE = "habit_data.csv"
 # --- DATA HANDLING ---
 def load_data():
     if os.path.exists(DATA_FILE):
-        return pd.read_csv(DATA_FILE)
+        df = pd.read_csv(DATA_FILE)
+
+        df = df.rename(columns={
+            "Research": "Early_Morning_Study",
+            "Bus_Time": "Evening_Study",
+            "No_TT": "No_Ludo"
+        })
+
+        return df
     else:
         return pd.DataFrame(columns=[
             "Date",
@@ -56,26 +64,32 @@ wake = st.sidebar.checkbox("Wake before 5 AM")
 sleep = st.sidebar.checkbox("Sleep before 10 PM")
 
 if st.sidebar.button("Save Daily Progress"):
-    results = [dsa, early, evening, walk, social, chat, ludo, phone, anime, wake, sleep]
-    score = sum(results)
+    data_dict = {
+        "Date": str(date),
+        "DSA": dsa,
+        "Early_Morning_Study": early,
+        "Evening_Study": evening,
+        "Walk": walk,
+        "No_Social": social,
+        "No_Chat": chat,
+        "No_Ludo": ludo,
+        "No_Phone_AM": phone,
+        "Anime_Less_1Hr": anime,
+        "Wake_Early": wake,
+        "Sleep_Early": sleep
+    }
 
-    new_entry = pd.DataFrame([[
-        str(date),
-        dsa,
-        early,
-        evening,
-        walk,
-        social,
-        chat,
-        ludo,
-        phone,
-        anime,
-        wake,
-        sleep,
-        score
-    ]], columns=df.columns)
+    score = sum(data_dict.values()) - len(data_dict) + 1  # exclude Date
+    data_dict["Score"] = score
 
+    new_entry = pd.DataFrame([data_dict])
+
+    # Ensure df has same columns
+    df = df.reindex(columns=new_entry.columns)
+
+    # Remove old entry for same date
     df = df[df['Date'] != str(date)]
+
     df = pd.concat([df, new_entry], ignore_index=True)
     save_data(df)
 
