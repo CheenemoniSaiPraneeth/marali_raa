@@ -14,9 +14,19 @@ def load_data():
         return pd.read_csv(DATA_FILE)
     else:
         return pd.DataFrame(columns=[
-            "Date", "DSA", "Research", "Bus_Time", "Walk",
-            "No_Social", "No_Chat", "No_TT", "No_Phone_AM",
-            "Wake_Early", "Sleep_Early", "Score"
+            "Date",
+            "DSA",
+            "Early_Morning_Study",
+            "Evening_Study",
+            "Walk",
+            "No_Social",
+            "No_Chat",
+            "No_Ludo",
+            "No_Phone_AM",
+            "Anime_Less_1Hr",
+            "Wake_Early",
+            "Sleep_Early",
+            "Score"
         ])
 
 def save_data(df):
@@ -24,41 +34,67 @@ def save_data(df):
 
 df = load_data()
 
-# --- SIDEBAR: LOGGING ---
+# --- SIDEBAR ---
 st.sidebar.header("📅 Daily Log")
 date = st.sidebar.date_input("Select Date", datetime.date.today())
 
 st.sidebar.subheader("🎯 Core Tasks")
 dsa = st.sidebar.checkbox("5 DSA Questions")
-research = st.sidebar.checkbox("Early morning study")
-bus = st.sidebar.checkbox("Evening study 1 Hour")
+early = st.sidebar.checkbox("Early Morning Study")
+evening = st.sidebar.checkbox("Evening Study")
 walk = st.sidebar.checkbox("Walk 4 KM")
 
 st.sidebar.subheader("🚫 Control Rules")
 social = st.sidebar.checkbox("No Social Media")
 chat = st.sidebar.checkbox("No Unnecessary Chatting")
-tt = st.sidebar.checkbox("No Ludo")
+ludo = st.sidebar.checkbox("No Ludo")
 phone = st.sidebar.checkbox("No Phone (First 30m)")
+anime = st.sidebar.checkbox("Anime < 1 Hour")
 
 st.sidebar.subheader("🛌 Discipline")
 wake = st.sidebar.checkbox("Wake before 5 AM")
 sleep = st.sidebar.checkbox("Sleep before 10 PM")
 
 if st.sidebar.button("Save Daily Progress"):
-    results = [dsa, research, bus, walk, social, chat, tt, phone, wake, sleep]
+    results = [dsa, early, evening, walk, social, chat, ludo, phone, anime, wake, sleep]
     score = sum(results)
 
     new_entry = pd.DataFrame([[
-        str(date), dsa, research, bus, walk,
-        social, chat, tt, phone, wake, sleep, score
+        str(date),
+        dsa,
+        early,
+        evening,
+        walk,
+        social,
+        chat,
+        ludo,
+        phone,
+        anime,
+        wake,
+        sleep,
+        score
     ]], columns=df.columns)
 
-    # Remove old entry for same date if exists, then add new
     df = df[df['Date'] != str(date)]
     df = pd.concat([df, new_entry], ignore_index=True)
     save_data(df)
 
-    st.sidebar.success(f"Saved! Daily Score: {score}/10")
+    st.sidebar.success(f"Saved! Daily Score: {score}/11")
+
+# --- DISPLAY NAME MAPPING ---
+rename_map = {
+    "DSA": "DSA",
+    "Early_Morning_Study": "Early Morning Study",
+    "Evening_Study": "Evening Study",
+    "Walk": "Walk 4 KM",
+    "No_Social": "No Social Media",
+    "No_Chat": "No Chat",
+    "No_Ludo": "No Ludo",
+    "No_Phone_AM": "No Phone (Morning)",
+    "Anime_Less_1Hr": "Anime < 1 Hour",
+    "Wake_Early": "Wake Early",
+    "Sleep_Early": "Sleep Early"
+}
 
 # --- MAIN DASHBOARD ---
 st.title("🏆 Daily Execution Dashboard")
@@ -70,39 +106,39 @@ if not df.empty:
     # Metrics
     m1, m2, m3 = st.columns(3)
     avg_score = df['Score'].mean()
-    m1.metric("Average Score", f"{avg_score:.1f} / 10")
+    m1.metric("Average Score", f"{avg_score:.1f} / 11")
     m2.metric("Total Days Tracked", len(df))
-    m3.metric("Last Score", f"{df['Score'].iloc[-1]} / 10")
+    m3.metric("Last Score", f"{df['Score'].iloc[-1]} / 11")
 
     st.divider()
 
-    # Performance Graph
+    # GRAPH
     st.subheader("📈 Performance Trend")
-    fig = px.line(
-        df, x='Date', y='Score', markers=True,
-        title="Daily Efficiency Score"
-    )
-    fig.update_layout(yaxis_range=[0, 11])
+    fig = px.line(df, x='Date', y='Score', markers=True)
+    fig.update_layout(yaxis_range=[0, 12])
     st.plotly_chart(fig, use_container_width=True)
 
-    # Habit Analysis
+    # HABIT ANALYSIS (FIXED NAMES)
     st.subheader("🔍 What are you missing?")
     habit_cols = df.columns[1:-1]
     completion_rates = (df[habit_cols].mean() * 100).sort_values()
+
+    # Rename for display
+    completion_rates.index = [rename_map.get(col, col) for col in completion_rates.index]
 
     fig_bar = px.bar(
         completion_rates,
         orientation='h',
         labels={'value': 'Success Rate (%)', 'index': 'Habit'},
-        title="Consistency by Category",
         color=completion_rates,
         color_continuous_scale='RdYlGn'
     )
     st.plotly_chart(fig_bar, use_container_width=True)
 
-    # Raw Data Table
+    # TABLE (RENAMED)
     with st.expander("See Raw History"):
-        st.dataframe(df.sort_values('Date', ascending=False))
+        display_df = df.rename(columns=rename_map)
+        st.dataframe(display_df.sort_values('Date', ascending=False))
 
 else:
-    st.info("No data found. Log your first day in the sidebar! 👉")
+    st.info("No data found. Log your first day 👉")
