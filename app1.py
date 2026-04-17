@@ -79,7 +79,7 @@ if st.sidebar.button("Save Daily Progress"):
         "Sleep_Early": sleep
     }
 
-    score = sum(data_dict.values()) - len(data_dict) + 1  # exclude Date
+    score = sum([v for k, v in data_dict.items() if k != "Date"])
     data_dict["Score"] = score
 
     new_entry = pd.DataFrame([data_dict])
