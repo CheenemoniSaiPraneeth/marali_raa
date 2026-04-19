@@ -7,14 +7,12 @@ import urllib.error
 
 app = Flask(__name__, static_folder='static')
 
-# GitHub config — set these as Environment Variables in Render
 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '')
-GITHUB_REPO  = os.environ.get('GITHUB_REPO', '')   # e.g. "CheenemoniSaiPraneeth/elite-tracker"
-DATA_PATH    = 'data.json'                           # path inside the repo
+GITHUB_REPO  = os.environ.get('GITHUB_REPO', '')
+DATA_PATH    = os.environ.get('DATA_PATH', 'data/habit_data.json')
 
 
 def github_get():
-    """Fetch data.json from GitHub. Returns (content_dict, sha)."""
     if not GITHUB_TOKEN or not GITHUB_REPO:
         return {"entries": []}, None
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{DATA_PATH}"
@@ -25,8 +23,15 @@ def github_get():
     try:
         with urllib.request.urlopen(req) as resp:
             meta = json.loads(resp.read())
-            content = base64.b64decode(meta['content']).decode('utf-8')
-            return json.loads(content), meta['sha']
+            sha = meta['sha']
+            raw = base64.b64decode(meta['content']).decode('utf-8').strip()
+            # Handle empty file
+            if not raw:
+                return {"entries": []}, sha
+            try:
+                return json.loads(raw), sha
+            except json.JSONDecodeError:
+                return {"entries": []}, sha
     except urllib.error.HTTPError as e:
         if e.code == 404:
             return {"entries": []}, None
@@ -34,15 +39,11 @@ def github_get():
 
 
 def github_put(data, sha=None):
-    """Write data.json to GitHub."""
     if not GITHUB_TOKEN or not GITHUB_REPO:
         return
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{DATA_PATH}"
     content = base64.b64encode(json.dumps(data, indent=2).encode()).decode()
-    payload = {
-        "message": "update tracker data",
-        "content": content,
-    }
+    payload = {"message": "update tracker data", "content": content}
     if sha:
         payload["sha"] = sha
     body = json.dumps(payload).encode()
@@ -62,24 +63,30 @@ def index():
 
 @app.route('/api/entries', methods=['GET'])
 def get_entries():
-    data, _ = github_get()
-    return jsonify(data.get('entries', []))
+    try:
+        data, _ = github_get()
+        return jsonify(data.get('entries', []))
+    except Exception as e:
+        return jsonify([]), 200
 
 
 @app.route('/api/entries', methods=['POST'])
 def save_entry():
-    data, sha = github_get()
-    entry = request.json
-    entries = data.get('entries', [])
-    existing_idx = next((i for i, e in enumerate(entries) if e['date'] == entry['date']), None)
-    if existing_idx is not None:
-        entries[existing_idx] = entry
-    else:
-        entries.append(entry)
-    entries.sort(key=lambda x: x['date'])
-    data['entries'] = entries
-    github_put(data, sha)
-    return jsonify({"status": "ok"})
+    try:
+        data, sha = github_get()
+        entry = request.json
+        entries = data.get('entries', [])
+        idx = next((i for i, e in enumerate(entries) if e['date'] == entry['date']), None)
+        if idx is not None:
+            entries[idx] = entry
+        else:
+            entries.append(entry)
+        entries.sort(key=lambda x: x['date'])
+        data['entries'] = entries
+        github_put(data, sha)
+        return jsonify({"status": "ok"})
+    except Exception as e:
+        return jsonify({"status": "error", "msg": str(e)}), 500
 
 
 if __name__ == '__main__':
