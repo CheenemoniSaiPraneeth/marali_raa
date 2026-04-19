@@ -9,9 +9,35 @@
 <style>
 :root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--border:#2a2a3a;--accent:#7c6fff;--accent3:#43e97b;--text:#e8e8f0;--muted:#6b6b80;--danger:#ff4757;--warn:#ffa502}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* SETUP OVERLAY */
+#setupOverlay{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:1000}
+.setup-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:36px;width:480px;display:flex;flex-direction:column;gap:20px}
+.setup-box h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--accent)}
+.setup-box p{font-size:12px;color:var(--muted);line-height:1.7}
+.setup-box ol{font-size:12px;color:var(--muted);line-height:2;padding-left:18px}
+.setup-box ol a{color:var(--accent);text-decoration:none}
+.setup-box ol a:hover{text-decoration:underline}
+.setup-field{display:flex;flex-direction:column;gap:6px}
+.setup-field label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.setup-field input{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 12px;font-family:'DM Mono',monospace;font-size:12px;border-radius:7px;width:100%}
+.setup-field input:focus{outline:none;border-color:var(--accent)}
+.setup-field small{font-size:10px;color:var(--muted)}
+.setup-btn{background:var(--accent);color:#fff;border:none;padding:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;border-radius:8px;cursor:pointer;transition:opacity .15s}
+.setup-btn:hover{opacity:.85}
+.setup-err{font-size:11px;color:var(--danger);min-height:14px;text-align:center}
+
+/* MAIN APP */
+#app{display:none;flex-direction:row;min-height:100vh}
 .sidebar{width:272px;min-width:272px;background:var(--surface);border-right:1px solid var(--border);padding:20px 14px;display:flex;flex-direction:column;gap:16px;height:100vh;overflow-y:auto;position:sticky;top:0}
-.sidebar h1{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.sidebar-top{display:flex;align-items:center;justify-content:space-between}
+.sidebar-top h1{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s}
+.sync-dot.ok{background:var(--accent3)}
+.sync-dot.syncing{background:var(--warn);animation:pulse 1s infinite}
+.sync-dot.err{background:var(--danger)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .flabel{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:5px}
 input[type=date],input[type=text]{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;font-family:'DM Mono',monospace;font-size:12px;border-radius:6px;width:100%}
 input[type=date]:focus,input[type=text]:focus{outline:none;border-color:var(--accent)}
@@ -27,9 +53,10 @@ input[type=date]:focus,input[type=text]:focus{outline:none;border-color:var(--ac
 .save-btn{background:var(--accent);color:#fff;border:none;padding:10px 14px;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;letter-spacing:.06em;border-radius:7px;cursor:pointer;transition:opacity .15s,transform .1s;margin-top:auto}
 .save-btn:hover{opacity:.85}
 .save-btn:active{transform:scale(.98)}
-.export-btn{background:transparent;color:var(--muted);border:1px solid var(--border);padding:7px 12px;font-family:'DM Mono',monospace;font-size:10px;border-radius:6px;cursor:pointer;transition:all .15s}
-.export-btn:hover{border-color:var(--accent);color:var(--accent)}
 .save-msg{font-size:10px;color:var(--accent3);text-align:center;min-height:14px}
+.reset-link{font-size:9px;color:var(--muted);text-align:center;cursor:pointer;text-decoration:underline}
+.reset-link:hover{color:var(--danger)}
+
 .main{flex:1;padding:28px 32px;overflow-y:auto;display:flex;flex-direction:column;gap:24px}
 .page-header h2{font-family:'Syne',sans-serif;font-size:26px;font-weight:800}
 .page-header p{color:var(--muted);font-size:12px;margin-top:3px}
@@ -65,90 +92,219 @@ input[type=date]:focus,input[type=text]:focus{outline:none;border-color:var(--ac
 </style>
 </head>
 <body>
-<aside class="sidebar">
-  <h1>⚡ Elite Tracker</h1>
-  <div><label class="flabel">Select Date</label><input type="date" id="dateInput"></div>
-  <div>
-    <div class="sec-title"><span>🎯</span> Core Tasks</div>
-    <div class="habit-group">
-      <div class="habit-item"><input type="checkbox" id="dsa"><label for="dsa">5–10 DSA Questions</label></div>
-      <div class="habit-item"><input type="checkbox" id="research"><label for="research">30–60 min Research</label></div>
-      <div class="habit-item"><input type="checkbox" id="bustime"><label for="bustime">Productive Bus Time (≥1hr)</label></div>
-      <div class="habit-item"><input type="checkbox" id="gym"><label for="gym">Gym Done Properly</label></div>
-      <div class="habit-item"><input type="checkbox" id="walk"><label for="walk">Walk 4 KM</label></div>
-    </div>
-  </div>
-  <div>
-    <div class="sec-title"><span>🚫</span> Control Rules</div>
-    <div class="habit-group">
-      <div class="habit-item"><input type="checkbox" id="nosocial"><label for="nosocial">No Social Media</label></div>
-      <div class="habit-item"><input type="checkbox" id="nojunk"><label for="nojunk">No Junk Food</label></div>
-      <div class="habit-item"><input type="checkbox" id="nochat"><label for="nochat">No Unnecessary Chatting</label></div>
-      <div class="habit-item"><input type="checkbox" id="nott"><label for="nott">No Table Tennis</label></div>
-      <div class="habit-item"><input type="checkbox" id="nophone"><label for="nophone">No Phone (First 30m)</label></div>
-    </div>
-  </div>
-  <div>
-    <div class="sec-title"><span>🧘</span> Discipline</div>
-    <div class="habit-group">
-      <div class="habit-item"><input type="checkbox" id="wake"><label for="wake">Wake before 6 AM</label></div>
-      <div class="habit-item"><input type="checkbox" id="sleep"><label for="sleep">Sleep before 11 PM</label></div>
-    </div>
-  </div>
-  <div>
-    <label class="flabel">⚖️ Body Weight</label>
-    <div class="weight-wrap"><input type="text" id="weightInput" placeholder="e.g. 87.5"><span>kg</span></div>
-  </div>
-  <button class="save-btn" onclick="saveEntry()">💾 Save Daily Progress</button>
-  <button class="export-btn" onclick="exportData()">⬇ Export JSON Backup</button>
-  <div class="save-msg" id="saveMsg"></div>
-</aside>
 
-<main class="main">
-  <div class="page-header">
-    <h2>🏆 Daily Execution Dashboard</h2>
-    <p>Data saved in your browser — use Export to back up</p>
-  </div>
-  <div class="stats-row">
-    <div class="stat-card"><div class="lbl">📊 Average Score</div><div class="val purple" id="statAvg">—</div></div>
-    <div class="stat-card"><div class="lbl">📅 Days Tracked</div><div class="val" id="statDays">0</div></div>
-    <div class="stat-card"><div class="lbl">🔥 Last Score</div><div class="val" id="statLast">—</div></div>
-    <div class="stat-card"><div class="lbl">⚖️ Current Weight</div><div class="val green" id="statWeight">—</div></div>
-  </div>
-  <div class="charts-grid">
-    <div class="chart-card"><h3>📈 Performance Trend</h3><div class="chart-wrap"><canvas id="scoreChart"></canvas></div></div>
-    <div class="chart-card"><h3>⚖️ Weight Trend</h3><div class="chart-wrap"><canvas id="weightChart"></canvas></div></div>
-  </div>
-  <div class="habit-card"><h3>🔍 Habit Consistency</h3><div class="hbars" id="habitBars"></div></div>
-  <div class="bottom-row">
-    <div class="streak-card"><h3>🔥 Best Streak</h3><div class="streak-num" id="streakVal">0</div><div class="streak-sub">perfect days in a row</div></div>
-    <div class="history-card">
-      <h3>📋 History</h3>
-      <table class="htable">
-        <thead><tr><th>Date</th><th>Score</th><th>Weight</th><th>Habits Done</th></tr></thead>
-        <tbody id="historyBody"></tbody>
-      </table>
+<!-- SETUP OVERLAY -->
+<div id="setupOverlay">
+  <div class="setup-box">
+    <h2>⚡ First Time Setup</h2>
+    <p>Your data auto-saves to a private GitHub Gist — works across devices, never lost. Do this once:</p>
+    <ol>
+      <li>Go to <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens/new</a></li>
+      <li>Name it <b>elite-tracker</b>, set expiry to <b>No expiration</b></li>
+      <li>Check only <b>gist</b> scope → Generate → Copy token</li>
+      <li>Paste below and click Connect</li>
+    </ol>
+    <div class="setup-field">
+      <label>GitHub Token (ghp_...)</label>
+      <input type="password" id="setupToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+      <small>Stored only in your browser, never sent anywhere except GitHub</small>
     </div>
+    <div class="setup-field" id="gistFieldWrap" style="display:none">
+      <label>Gist ID (if you already have one)</label>
+      <input type="text" id="setupGistId" placeholder="Leave blank to create a new Gist">
+      <small>Found in the Gist URL: gist.github.com/username/THIS_PART</small>
+    </div>
+    <button class="setup-btn" onclick="setupConnect()">🔗 Connect &amp; Start</button>
+    <div class="setup-err" id="setupErr"></div>
+    <div style="text-align:center"><span style="font-size:10px;color:var(--muted);cursor:pointer;text-decoration:underline" onclick="showGistField()">Already have a Gist ID?</span></div>
   </div>
-</main>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <h1>⚡ Elite Tracker</h1>
+      <div class="sync-dot" id="syncDot" title="Sync status"></div>
+    </div>
+    <div><label class="flabel">Select Date</label><input type="date" id="dateInput"></div>
+    <div>
+      <div class="sec-title"><span>🎯</span> Core Tasks</div>
+      <div class="habit-group">
+        <div class="habit-item"><input type="checkbox" id="dsa"><label for="dsa">5–10 DSA Questions</label></div>
+        <div class="habit-item"><input type="checkbox" id="research"><label for="research">30–60 min Research</label></div>
+        <div class="habit-item"><input type="checkbox" id="bustime"><label for="bustime">Productive Bus Time (≥1hr)</label></div>
+        <div class="habit-item"><input type="checkbox" id="gym"><label for="gym">Gym Done Properly</label></div>
+        <div class="habit-item"><input type="checkbox" id="walk"><label for="walk">Walk 4 KM</label></div>
+      </div>
+    </div>
+    <div>
+      <div class="sec-title"><span>🚫</span> Control Rules</div>
+      <div class="habit-group">
+        <div class="habit-item"><input type="checkbox" id="nosocial"><label for="nosocial">No Social Media</label></div>
+        <div class="habit-item"><input type="checkbox" id="nojunk"><label for="nojunk">No Junk Food</label></div>
+        <div class="habit-item"><input type="checkbox" id="nochat"><label for="nochat">No Unnecessary Chatting</label></div>
+        <div class="habit-item"><input type="checkbox" id="nott"><label for="nott">No Table Tennis</label></div>
+        <div class="habit-item"><input type="checkbox" id="nophone"><label for="nophone">No Phone (First 30m)</label></div>
+      </div>
+    </div>
+    <div>
+      <div class="sec-title"><span>🧘</span> Discipline</div>
+      <div class="habit-group">
+        <div class="habit-item"><input type="checkbox" id="wake"><label for="wake">Wake before 6 AM</label></div>
+        <div class="habit-item"><input type="checkbox" id="sleep"><label for="sleep">Sleep before 11 PM</label></div>
+      </div>
+    </div>
+    <div>
+      <label class="flabel">⚖️ Body Weight</label>
+      <div class="weight-wrap"><input type="text" id="weightInput" placeholder="e.g. 87.5"><span>kg</span></div>
+    </div>
+    <button class="save-btn" onclick="saveEntry()">💾 Save Daily Progress</button>
+    <div class="save-msg" id="saveMsg"></div>
+    <span class="reset-link" onclick="resetSetup()">Reset / change account</span>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <h2>🏆 Daily Execution Dashboard</h2>
+      <p>Auto-synced to GitHub Gist — data safe across all devices</p>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="lbl">📊 Average Score</div><div class="val purple" id="statAvg">—</div></div>
+      <div class="stat-card"><div class="lbl">📅 Days Tracked</div><div class="val" id="statDays">0</div></div>
+      <div class="stat-card"><div class="lbl">🔥 Last Score</div><div class="val" id="statLast">—</div></div>
+      <div class="stat-card"><div class="lbl">⚖️ Current Weight</div><div class="val green" id="statWeight">—</div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card"><h3>📈 Performance Trend</h3><div class="chart-wrap"><canvas id="scoreChart"></canvas></div></div>
+      <div class="chart-card"><h3>⚖️ Weight Trend</h3><div class="chart-wrap"><canvas id="weightChart"></canvas></div></div>
+    </div>
+    <div class="habit-card"><h3>🔍 Habit Consistency</h3><div class="hbars" id="habitBars"></div></div>
+    <div class="bottom-row">
+      <div class="streak-card"><h3>🔥 Best Streak</h3><div class="streak-num" id="streakVal">0</div><div class="streak-sub">perfect days in a row</div></div>
+      <div class="history-card">
+        <h3>📋 History</h3>
+        <table class="htable">
+          <thead><tr><th>Date</th><th>Score</th><th>Weight</th><th>Habits Done</th></tr></thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
 
 <script>
 const HABITS=[{id:'dsa',label:'DSA'},{id:'research',label:'Research'},{id:'bustime',label:'Bus_Time'},{id:'gym',label:'Gym'},{id:'walk',label:'Walk'},{id:'nosocial',label:'No_Social'},{id:'nojunk',label:'No_Junk'},{id:'nochat',label:'No_Chat'},{id:'nott',label:'No_TT'},{id:'nophone',label:'No_Phone_AM'},{id:'wake',label:'Wake_Early'},{id:'sleep',label:'Sleep_Early'}];
-const KEY='elite_tracker_v1';
+const LKEY='elite_tracker_v2';
 let SC=null,WC=null;
 const today=new Date().toISOString().split('T')[0];
-document.getElementById('dateInput').value=today;
-document.getElementById('dateInput').addEventListener('change',loadDate);
-function load(){try{return JSON.parse(localStorage.getItem(KEY))||[];}catch{return[];}}
-function store(e){localStorage.setItem(KEY,JSON.stringify(e));}
+
+// ── CONFIG ─────────────────────────────────────────────
+function getCfg(){try{return JSON.parse(localStorage.getItem(LKEY+'_cfg'))||{};}catch{return {};}}
+function setCfg(c){localStorage.setItem(LKEY+'_cfg',JSON.stringify(c));}
+
+// ── SETUP ──────────────────────────────────────────────
+function showGistField(){document.getElementById('gistFieldWrap').style.display='flex';document.getElementById('gistFieldWrap').style.flexDirection='column';}
+
+async function setupConnect(){
+  const token=document.getElementById('setupToken').value.trim();
+  const gistId=document.getElementById('setupGistId').value.trim();
+  const err=document.getElementById('setupErr');
+  err.textContent='';
+  if(!token){err.textContent='Please enter your GitHub token';return;}
+  err.textContent='Connecting...';
+  try{
+    if(gistId){
+      // Verify existing gist
+      const r=await gistGet(token,gistId);
+      if(!r.ok){err.textContent='Could not find that Gist. Check the ID.';return;}
+      const data=await r.json();
+      const content=data.files['elite_tracker.json']?.content;
+      let entries=[];
+      if(content){try{entries=JSON.parse(content).entries||[];}catch{}}
+      setCfg({token,gistId});
+      localStorage.setItem(LKEY,JSON.stringify(entries));
+    } else {
+      // Create new gist
+      const r=await gistCreate(token);
+      if(!r.ok){err.textContent='Token invalid or missing gist scope.';return;}
+      const data=await r.json();
+      setCfg({token,gistId:data.id});
+    }
+    startApp();
+  }catch(e){err.textContent='Error: '+e.message;}
+}
+
+// ── GIST API ───────────────────────────────────────────
+function gistGet(token,id){
+  return fetch(`https://api.github.com/gists/${id}`,{headers:{Authorization:`token ${token}`}});
+}
+function gistCreate(token){
+  return fetch('https://api.github.com/gists',{
+    method:'POST',
+    headers:{Authorization:`token ${token}`,'Content-Type':'application/json'},
+    body:JSON.stringify({description:'Elite Tracker Data',public:false,files:{'elite_tracker.json':{content:JSON.stringify({entries:[]})}}})
+  });
+}
+function gistUpdate(token,id,entries){
+  return fetch(`https://api.github.com/gists/${id}`,{
+    method:'PATCH',
+    headers:{Authorization:`token ${token}`,'Content-Type':'application/json'},
+    body:JSON.stringify({files:{'elite_tracker.json':{content:JSON.stringify({entries},null,2)}}})
+  });
+}
+
+// ── SYNC DOT ───────────────────────────────────────────
+function dot(state){const d=document.getElementById('syncDot');d.className='sync-dot '+state;}
+
+// ── LOCAL DATA ─────────────────────────────────────────
+function load(){try{return JSON.parse(localStorage.getItem(LKEY))||[];}catch{return[];}}
+function store(e){localStorage.setItem(LKEY,JSON.stringify(e));}
 function score(e){return HABITS.filter(h=>!!e[h.id]).length;}
+
+// ── INIT APP ───────────────────────────────────────────
+async function startApp(){
+  document.getElementById('setupOverlay').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('dateInput').value=today;
+  document.getElementById('dateInput').addEventListener('change',loadDate);
+
+  // Pull latest from Gist on load
+  dot('syncing');
+  try{
+    const cfg=getCfg();
+    const r=await gistGet(cfg.token,cfg.gistId);
+    if(r.ok){
+      const data=await r.json();
+      const content=data.files['elite_tracker.json']?.content;
+      if(content){
+        const remote=JSON.parse(content).entries||[];
+        // Merge: remote wins for same date
+        const local=load();
+        const merged=mergeEntries(local,remote);
+        store(merged);
+      }
+    }
+    dot('ok');
+  }catch{dot('err');}
+  loadDate();render();
+}
+
+function mergeEntries(local,remote){
+  const map={};
+  local.forEach(e=>map[e.date]=e);
+  remote.forEach(e=>map[e.date]=e); // remote overwrites
+  return Object.values(map).sort((a,b)=>a.date.localeCompare(b.date));
+}
+
 function loadDate(){
   const d=document.getElementById('dateInput').value;
   const e=load().find(x=>x.date===d);
   HABITS.forEach(h=>{document.getElementById(h.id).checked=e?!!e[h.id]:false;});
   document.getElementById('weightInput').value=e?.weight||'';
 }
-function saveEntry(){
+
+async function saveEntry(){
   const d=document.getElementById('dateInput').value;
   const entry={date:d};
   HABITS.forEach(h=>{entry[h.id]=document.getElementById(h.id).checked;});
@@ -158,14 +314,28 @@ function saveEntry(){
   const i=arr.findIndex(x=>x.date===d);
   if(i>=0)arr[i]=entry;else arr.push(entry);
   arr.sort((a,b)=>a.date.localeCompare(b.date));
-  store(arr);render();
-  const m=document.getElementById('saveMsg');m.textContent='✓ Saved!';setTimeout(()=>m.textContent='',2000);
+  store(arr);
+  render();
+  const m=document.getElementById('saveMsg');
+  m.textContent='💾 Saving...';
+  dot('syncing');
+  try{
+    const cfg=getCfg();
+    const r=await gistUpdate(cfg.token,cfg.gistId,arr);
+    if(r.ok){dot('ok');m.textContent='✓ Saved & synced!';}
+    else{dot('err');m.textContent='✓ Saved locally (sync failed)';}
+  }catch{dot('err');m.textContent='✓ Saved locally (offline)';}
+  setTimeout(()=>m.textContent='',3000);
 }
-function exportData(){
-  const blob=new Blob([JSON.stringify({entries:load()},null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download=`elite_backup_${today}.json`;a.click();
+
+function resetSetup(){
+  if(confirm('Reset connection? Your data stays in the Gist.')){
+    localStorage.removeItem(LKEY+'_cfg');
+    location.reload();
+  }
 }
+
+// ── RENDER ─────────────────────────────────────────────
 function render(){
   const arr=load();if(!arr.length)return;
   const scores=arr.map(score);
@@ -176,12 +346,12 @@ function render(){
   const wl=[...arr].reverse().find(e=>e.weight);
   document.getElementById('statWeight').textContent=wl?wl.weight+' kg':'—';
   const labels=arr.map(e=>e.date.slice(5));
-  const cfg={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6b6b80',font:{family:'DM Mono',size:10}},grid:{color:'#1e1e2e'}},y:{ticks:{color:'#6b6b80',font:{family:'DM Mono',size:10}},grid:{color:'#1e1e2e'}}}};
+  const gcfg={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6b6b80',font:{family:'DM Mono',size:10}},grid:{color:'#1e1e2e'}},y:{ticks:{color:'#6b6b80',font:{family:'DM Mono',size:10}},grid:{color:'#1e1e2e'}}}};
   if(SC)SC.destroy();
-  SC=new Chart(document.getElementById('scoreChart').getContext('2d'),{type:'line',data:{labels,datasets:[{data:scores,borderColor:'#7c6fff',backgroundColor:'rgba(124,111,255,0.1)',fill:true,tension:0.4,pointBackgroundColor:'#7c6fff',pointRadius:4}]},options:{...cfg,scales:{...cfg.scales,y:{...cfg.scales.y,min:0,max:12}}}});
+  SC=new Chart(document.getElementById('scoreChart').getContext('2d'),{type:'line',data:{labels,datasets:[{data:scores,borderColor:'#7c6fff',backgroundColor:'rgba(124,111,255,0.1)',fill:true,tension:0.4,pointBackgroundColor:'#7c6fff',pointRadius:4}]},options:{...gcfg,scales:{...gcfg.scales,y:{...gcfg.scales.y,min:0,max:12}}}});
   const we=arr.filter(e=>e.weight);
   if(WC)WC.destroy();
-  WC=new Chart(document.getElementById('weightChart').getContext('2d'),{type:'line',data:{labels:we.map(e=>e.date.slice(5)),datasets:[{data:we.map(e=>parseFloat(e.weight)),borderColor:'#43e97b',backgroundColor:'rgba(67,233,123,0.08)',fill:true,tension:0.4,pointBackgroundColor:'#43e97b',pointRadius:4}]},options:cfg});
+  WC=new Chart(document.getElementById('weightChart').getContext('2d'),{type:'line',data:{labels:we.map(e=>e.date.slice(5)),datasets:[{data:we.map(e=>parseFloat(e.weight)),borderColor:'#43e97b',backgroundColor:'rgba(67,233,123,0.08)',fill:true,tension:0.4,pointBackgroundColor:'#43e97b',pointRadius:4}]},options:gcfg});
   const bars=document.getElementById('habitBars');bars.innerHTML='';
   HABITS.forEach(h=>{
     const pct=Math.round((arr.filter(e=>!!e[h.id]).length/arr.length)*100);
@@ -197,7 +367,11 @@ function render(){
     tb.innerHTML+=`<tr><td>${e.date}</td><td><span class="pill ${cls}">${s}/12</span></td><td>${e.weight?e.weight+' kg':'—'}</td><td style="color:var(--muted)">${done}</td></tr>`;
   });
 }
-loadDate();render();
+
+// ── BOOT ───────────────────────────────────────────────
+const cfg=getCfg();
+if(cfg.token&&cfg.gistId){startApp();}
+// else setup overlay stays visible
 </script>
 </body>
 </html>
