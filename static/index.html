@@ -7,296 +7,70 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #12121a;
-    --surface2: #1a1a26;
-    --border: #2a2a3a;
-    --accent: #7c6fff;
-    --accent2: #ff6b6b;
-    --accent3: #43e97b;
-    --text: #e8e8f0;
-    --muted: #6b6b80;
-    --danger: #ff4757;
-    --warn: #ffa502;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'DM Mono', monospace;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-  }
-
-  /* Sidebar */
-  .sidebar {
-    width: 280px;
-    min-width: 280px;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    padding: 24px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    height: 100vh;
-    overflow-y: auto;
-    position: sticky;
-    top: 0;
-  }
-  .sidebar h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: 15px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--accent);
-  }
-  .date-picker {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .date-picker label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
-  .date-picker input {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 8px 10px;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    border-radius: 6px;
-    width: 100%;
-    cursor: pointer;
-  }
-  .date-picker input:focus { outline: none; border-color: var(--accent); }
-
-  .section-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 8px;
-  }
-  .section-title span { font-size: 14px; }
-
-  .habit-group { display: flex; flex-direction: column; gap: 4px; }
-  .habit-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 7px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.15s;
-    font-size: 12px;
-  }
-  .habit-item:hover { background: var(--surface2); }
-  .habit-item input[type="checkbox"] {
-    width: 16px; height: 16px;
-    accent-color: var(--accent);
-    cursor: pointer;
-  }
-  .habit-item label { cursor: pointer; color: var(--text); }
-
-  /* Weight input */
-  .weight-section { display: flex; flex-direction: column; gap: 6px; }
-  .weight-section label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
-  .weight-input-row { display: flex; gap: 8px; align-items: center; }
-  .weight-input-row input {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 8px 10px;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    border-radius: 6px;
-    width: 100%;
-  }
-  .weight-input-row input:focus { outline: none; border-color: var(--accent); }
-  .weight-input-row span { color: var(--muted); font-size: 12px; white-space: nowrap; }
-
-  .save-btn {
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    padding: 11px 16px;
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: 0.06em;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: opacity 0.15s, transform 0.1s;
-    margin-top: auto;
-  }
-  .save-btn:hover { opacity: 0.85; }
-  .save-btn:active { transform: scale(0.98); }
-  .save-msg { font-size: 11px; color: var(--accent3); text-align: center; min-height: 16px; }
-
-  /* Main content */
-  .main {
-    flex: 1;
-    padding: 32px 36px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-  }
-
-  .page-header h2 {
-    font-family: 'Syne', sans-serif;
-    font-size: 28px;
-    font-weight: 800;
-    color: var(--text);
-  }
-  .page-header p { color: var(--muted); font-size: 13px; margin-top: 4px; }
-
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-  }
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 18px 20px;
-  }
-  .stat-card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
-  .stat-card .value {
-    font-family: 'Syne', sans-serif;
-    font-size: 26px;
-    font-weight: 800;
-    color: var(--text);
-  }
-  .stat-card .value.green { color: var(--accent3); }
-  .stat-card .value.purple { color: var(--accent); }
-
-  .chart-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 24px;
-  }
-  .chart-section h3 {
-    font-family: 'Syne', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    margin-bottom: 20px;
-    color: var(--text);
-  }
-  .chart-wrap { position: relative; height: 220px; }
-
-  .charts-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
-
-  .habit-bar-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 24px;
-  }
-  .habit-bar-section h3 {
-    font-family: 'Syne', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    margin-bottom: 20px;
-    color: var(--text);
-  }
-  .habit-bars { display: flex; flex-direction: column; gap: 10px; }
-  .hbar { display: flex; align-items: center; gap: 12px; }
-  .hbar-label { font-size: 11px; color: var(--muted); min-width: 100px; text-align: right; }
-  .hbar-track { flex: 1; background: var(--border); border-radius: 4px; height: 8px; overflow: hidden; }
-  .hbar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
-  .hbar-pct { font-size: 11px; color: var(--muted); min-width: 36px; text-align: right; }
-
-  .streak-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 24px;
-  }
-  .streak-section h3 {
-    font-family: 'Syne', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    margin-bottom: 16px;
-    color: var(--text);
-  }
-  .streak-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 48px;
-    font-weight: 800;
-    color: var(--warn);
-  }
-  .streak-label { color: var(--muted); font-size: 12px; margin-top: 4px; }
-
-  .history-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 24px;
-  }
-  .history-section h3 {
-    font-family: 'Syne', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    margin-bottom: 16px;
-    color: var(--text);
-  }
-  .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .history-table th {
-    text-align: left;
-    color: var(--muted);
-    font-weight: 400;
-    padding: 6px 10px;
-    border-bottom: 1px solid var(--border);
-    text-transform: uppercase;
-    font-size: 10px;
-    letter-spacing: 0.08em;
-  }
-  .history-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
-  .history-table tr:last-child td { border-bottom: none; }
-  .score-pill {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    font-family: 'Syne', sans-serif;
-  }
-  .pill-green { background: rgba(67,233,123,0.15); color: var(--accent3); }
-  .pill-yellow { background: rgba(255,165,2,0.15); color: var(--warn); }
-  .pill-red { background: rgba(255,71,87,0.15); color: var(--danger); }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+:root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--border:#2a2a3a;--accent:#7c6fff;--accent3:#43e97b;--text:#e8e8f0;--muted:#6b6b80;--danger:#ff4757;--warn:#ffa502}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+.sidebar{width:272px;min-width:272px;background:var(--surface);border-right:1px solid var(--border);padding:20px 14px;display:flex;flex-direction:column;gap:16px;height:100vh;overflow-y:auto;position:sticky;top:0}
+.sidebar h1{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.flabel{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:5px}
+input[type=date],input[type=text]{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;font-family:'DM Mono',monospace;font-size:12px;border-radius:6px;width:100%}
+input[type=date]:focus,input[type=text]:focus{outline:none;border-color:var(--accent)}
+.sec-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);display:flex;align-items:center;gap:5px;margin-bottom:6px}
+.habit-group{display:flex;flex-direction:column;gap:2px}
+.habit-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:5px;cursor:pointer;transition:background .12s;font-size:11px}
+.habit-item:hover{background:var(--surface2)}
+.habit-item input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.habit-item label{cursor:pointer}
+.weight-wrap{display:flex;gap:6px;align-items:center}
+.weight-wrap input{flex:1}
+.weight-wrap span{color:var(--muted);font-size:11px}
+.save-btn{background:var(--accent);color:#fff;border:none;padding:10px 14px;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;letter-spacing:.06em;border-radius:7px;cursor:pointer;transition:opacity .15s,transform .1s;margin-top:auto}
+.save-btn:hover{opacity:.85}
+.save-btn:active{transform:scale(.98)}
+.export-btn{background:transparent;color:var(--muted);border:1px solid var(--border);padding:7px 12px;font-family:'DM Mono',monospace;font-size:10px;border-radius:6px;cursor:pointer;transition:all .15s}
+.export-btn:hover{border-color:var(--accent);color:var(--accent)}
+.save-msg{font-size:10px;color:var(--accent3);text-align:center;min-height:14px}
+.main{flex:1;padding:28px 32px;overflow-y:auto;display:flex;flex-direction:column;gap:24px}
+.page-header h2{font-family:'Syne',sans-serif;font-size:26px;font-weight:800}
+.page-header p{color:var(--muted);font-size:12px;margin-top:3px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:16px 18px}
+.stat-card .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px}
+.stat-card .val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800}
+.purple{color:var(--accent)}.green{color:var(--accent3)}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:20px}
+.chart-card h3{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:16px}
+.chart-wrap{position:relative;height:200px}
+.habit-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:20px}
+.habit-card h3{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:16px}
+.hbars{display:flex;flex-direction:column;gap:9px}
+.hbar{display:flex;align-items:center;gap:10px}
+.hbar-lbl{font-size:10px;color:var(--muted);min-width:96px;text-align:right}
+.hbar-track{flex:1;background:var(--border);border-radius:3px;height:7px;overflow:hidden}
+.hbar-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.hbar-pct{font-size:10px;color:var(--muted);min-width:32px;text-align:right}
+.bottom-row{display:grid;grid-template-columns:180px 1fr;gap:18px}
+.streak-card,.history-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:20px}
+.streak-card h3,.history-card h3{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:12px}
+.streak-num{font-family:'Syne',sans-serif;font-size:52px;font-weight:800;color:var(--warn);line-height:1}
+.streak-sub{color:var(--muted);font-size:10px;margin-top:6px}
+.htable{width:100%;border-collapse:collapse;font-size:11px}
+.htable th{text-align:left;color:var(--muted);font-weight:400;padding:5px 8px;border-bottom:1px solid var(--border);text-transform:uppercase;font-size:9px;letter-spacing:.08em}
+.htable td{padding:7px 8px;border-bottom:1px solid var(--border)}
+.htable tr:last-child td{border-bottom:none}
+.pill{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;font-family:'Syne',sans-serif}
+.pg{background:rgba(67,233,123,.15);color:var(--accent3)}.py{background:rgba(255,165,2,.15);color:var(--warn)}.pr{background:rgba(255,71,87,.15);color:var(--danger)}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 </style>
 </head>
 <body>
-
 <aside class="sidebar">
   <h1>⚡ Elite Tracker</h1>
-
-  <div class="date-picker">
-    <label>Select Date</label>
-    <input type="date" id="dateInput">
-  </div>
-
+  <div><label class="flabel">Select Date</label><input type="date" id="dateInput"></div>
   <div>
-    <div class="section-title"><span>🎯</span> Core Tasks</div>
-    <div class="habit-group" id="coreHabits">
+    <div class="sec-title"><span>🎯</span> Core Tasks</div>
+    <div class="habit-group">
       <div class="habit-item"><input type="checkbox" id="dsa"><label for="dsa">5–10 DSA Questions</label></div>
       <div class="habit-item"><input type="checkbox" id="research"><label for="research">30–60 min Research</label></div>
       <div class="habit-item"><input type="checkbox" id="bustime"><label for="bustime">Productive Bus Time (≥1hr)</label></div>
@@ -304,9 +78,8 @@
       <div class="habit-item"><input type="checkbox" id="walk"><label for="walk">Walk 4 KM</label></div>
     </div>
   </div>
-
   <div>
-    <div class="section-title"><span>🚫</span> Control Rules</div>
+    <div class="sec-title"><span>🚫</span> Control Rules</div>
     <div class="habit-group">
       <div class="habit-item"><input type="checkbox" id="nosocial"><label for="nosocial">No Social Media</label></div>
       <div class="habit-item"><input type="checkbox" id="nojunk"><label for="nojunk">No Junk Food</label></div>
@@ -315,80 +88,44 @@
       <div class="habit-item"><input type="checkbox" id="nophone"><label for="nophone">No Phone (First 30m)</label></div>
     </div>
   </div>
-
   <div>
-    <div class="section-title"><span>🧘</span> Discipline</div>
+    <div class="sec-title"><span>🧘</span> Discipline</div>
     <div class="habit-group">
       <div class="habit-item"><input type="checkbox" id="wake"><label for="wake">Wake before 6 AM</label></div>
       <div class="habit-item"><input type="checkbox" id="sleep"><label for="sleep">Sleep before 11 PM</label></div>
     </div>
   </div>
-
-  <div class="weight-section">
-    <label>⚖️ Body Weight</label>
-    <div class="weight-input-row">
-      <input type="text" id="weightInput" placeholder="e.g. 72.5">
-      <span>kg</span>
-    </div>
+  <div>
+    <label class="flabel">⚖️ Body Weight</label>
+    <div class="weight-wrap"><input type="text" id="weightInput" placeholder="e.g. 87.5"><span>kg</span></div>
   </div>
-
   <button class="save-btn" onclick="saveEntry()">💾 Save Daily Progress</button>
+  <button class="export-btn" onclick="exportData()">⬇ Export JSON Backup</button>
   <div class="save-msg" id="saveMsg"></div>
 </aside>
 
 <main class="main">
   <div class="page-header">
     <h2>🏆 Daily Execution Dashboard</h2>
-    <p>Track your habits, weight, and performance over time</p>
+    <p>Data saved in your browser — use Export to back up</p>
   </div>
-
   <div class="stats-row">
-    <div class="stat-card">
-      <div class="label">📊 Average Score</div>
-      <div class="value purple" id="statAvg">—</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">📅 Days Tracked</div>
-      <div class="value" id="statDays">0</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">🔥 Last Score</div>
-      <div class="value" id="statLast">—</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">⚖️ Current Weight</div>
-      <div class="value green" id="statWeight">—</div>
-    </div>
+    <div class="stat-card"><div class="lbl">📊 Average Score</div><div class="val purple" id="statAvg">—</div></div>
+    <div class="stat-card"><div class="lbl">📅 Days Tracked</div><div class="val" id="statDays">0</div></div>
+    <div class="stat-card"><div class="lbl">🔥 Last Score</div><div class="val" id="statLast">—</div></div>
+    <div class="stat-card"><div class="lbl">⚖️ Current Weight</div><div class="val green" id="statWeight">—</div></div>
   </div>
-
   <div class="charts-grid">
-    <div class="chart-section">
-      <h3>📈 Performance Trend</h3>
-      <div class="chart-wrap"><canvas id="scoreChart"></canvas></div>
-    </div>
-    <div class="chart-section">
-      <h3>⚖️ Weight Trend</h3>
-      <div class="chart-wrap"><canvas id="weightChart"></canvas></div>
-    </div>
+    <div class="chart-card"><h3>📈 Performance Trend</h3><div class="chart-wrap"><canvas id="scoreChart"></canvas></div></div>
+    <div class="chart-card"><h3>⚖️ Weight Trend</h3><div class="chart-wrap"><canvas id="weightChart"></canvas></div></div>
   </div>
-
-  <div class="habit-bar-section">
-    <h3>🔍 Habit Consistency</h3>
-    <div class="habit-bars" id="habitBars"></div>
-  </div>
-
-  <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px">
-    <div class="streak-section">
-      <h3>🔥 Streak Analysis</h3>
-      <div class="streak-value" id="streakVal">0</div>
-      <div class="streak-label">Longest Perfect Streak (days)</div>
-    </div>
-    <div class="history-section">
-      <h3>📋 Raw History</h3>
-      <table class="history-table">
-        <thead>
-          <tr><th>Date</th><th>Score</th><th>Weight</th><th>Top Habit Done</th></tr>
-        </thead>
+  <div class="habit-card"><h3>🔍 Habit Consistency</h3><div class="hbars" id="habitBars"></div></div>
+  <div class="bottom-row">
+    <div class="streak-card"><h3>🔥 Best Streak</h3><div class="streak-num" id="streakVal">0</div><div class="streak-sub">perfect days in a row</div></div>
+    <div class="history-card">
+      <h3>📋 History</h3>
+      <table class="htable">
+        <thead><tr><th>Date</th><th>Score</th><th>Weight</th><th>Habits Done</th></tr></thead>
         <tbody id="historyBody"></tbody>
       </table>
     </div>
@@ -396,184 +133,71 @@
 </main>
 
 <script>
-const HABITS = [
-  { id: 'dsa', label: 'DSA' },
-  { id: 'research', label: 'Research' },
-  { id: 'bustime', label: 'Bus_Time' },
-  { id: 'gym', label: 'Gym' },
-  { id: 'walk', label: 'Walk' },
-  { id: 'nosocial', label: 'No_Social' },
-  { id: 'nojunk', label: 'No_Junk' },
-  { id: 'nochat', label: 'No_Chat' },
-  { id: 'nott', label: 'No_TT' },
-  { id: 'nophone', label: 'No_Phone_AM' },
-  { id: 'wake', label: 'Wake_Early' },
-  { id: 'sleep', label: 'Sleep_Early' },
-];
-
-let entries = [];
-let scoreChart = null;
-let weightChart = null;
-
-const today = new Date().toISOString().split('T')[0];
-document.getElementById('dateInput').value = today;
-document.getElementById('dateInput').addEventListener('change', loadDateEntry);
-
-async function init() {
-  const res = await fetch('/api/entries');
-  entries = await res.json();
-  loadDateEntry();
-  renderDashboard();
+const HABITS=[{id:'dsa',label:'DSA'},{id:'research',label:'Research'},{id:'bustime',label:'Bus_Time'},{id:'gym',label:'Gym'},{id:'walk',label:'Walk'},{id:'nosocial',label:'No_Social'},{id:'nojunk',label:'No_Junk'},{id:'nochat',label:'No_Chat'},{id:'nott',label:'No_TT'},{id:'nophone',label:'No_Phone_AM'},{id:'wake',label:'Wake_Early'},{id:'sleep',label:'Sleep_Early'}];
+const KEY='elite_tracker_v1';
+let SC=null,WC=null;
+const today=new Date().toISOString().split('T')[0];
+document.getElementById('dateInput').value=today;
+document.getElementById('dateInput').addEventListener('change',loadDate);
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||[];}catch{return[];}}
+function store(e){localStorage.setItem(KEY,JSON.stringify(e));}
+function score(e){return HABITS.filter(h=>!!e[h.id]).length;}
+function loadDate(){
+  const d=document.getElementById('dateInput').value;
+  const e=load().find(x=>x.date===d);
+  HABITS.forEach(h=>{document.getElementById(h.id).checked=e?!!e[h.id]:false;});
+  document.getElementById('weightInput').value=e?.weight||'';
 }
-
-function loadDateEntry() {
-  const date = document.getElementById('dateInput').value;
-  const entry = entries.find(e => e.date === date);
-  HABITS.forEach(h => {
-    document.getElementById(h.id).checked = entry ? !!entry[h.id] : false;
-  });
-  document.getElementById('weightInput').value = entry && entry.weight ? entry.weight : '';
+function saveEntry(){
+  const d=document.getElementById('dateInput').value;
+  const entry={date:d};
+  HABITS.forEach(h=>{entry[h.id]=document.getElementById(h.id).checked;});
+  const w=document.getElementById('weightInput').value.trim();
+  if(w)entry.weight=w;
+  let arr=load();
+  const i=arr.findIndex(x=>x.date===d);
+  if(i>=0)arr[i]=entry;else arr.push(entry);
+  arr.sort((a,b)=>a.date.localeCompare(b.date));
+  store(arr);render();
+  const m=document.getElementById('saveMsg');m.textContent='✓ Saved!';setTimeout(()=>m.textContent='',2000);
 }
-
-function getScore(entry) {
-  return HABITS.filter(h => !!entry[h.id]).length;
+function exportData(){
+  const blob=new Blob([JSON.stringify({entries:load()},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`elite_backup_${today}.json`;a.click();
 }
-
-async function saveEntry() {
-  const date = document.getElementById('dateInput').value;
-  const entry = { date };
-  HABITS.forEach(h => { entry[h.id] = document.getElementById(h.id).checked; });
-  const w = document.getElementById('weightInput').value.trim();
-  if (w) entry.weight = w;
-
-  await fetch('/api/entries', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(entry)
+function render(){
+  const arr=load();if(!arr.length)return;
+  const scores=arr.map(score);
+  const avg=(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
+  document.getElementById('statAvg').textContent=avg+' / 12';
+  document.getElementById('statDays').textContent=arr.length;
+  document.getElementById('statLast').textContent=scores[scores.length-1]+' / 12';
+  const wl=[...arr].reverse().find(e=>e.weight);
+  document.getElementById('statWeight').textContent=wl?wl.weight+' kg':'—';
+  const labels=arr.map(e=>e.date.slice(5));
+  const cfg={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6b6b80',font:{family:'DM Mono',size:10}},grid:{color:'#1e1e2e'}},y:{ticks:{color:'#6b6b80',font:{family:'DM Mono',size:10}},grid:{color:'#1e1e2e'}}}};
+  if(SC)SC.destroy();
+  SC=new Chart(document.getElementById('scoreChart').getContext('2d'),{type:'line',data:{labels,datasets:[{data:scores,borderColor:'#7c6fff',backgroundColor:'rgba(124,111,255,0.1)',fill:true,tension:0.4,pointBackgroundColor:'#7c6fff',pointRadius:4}]},options:{...cfg,scales:{...cfg.scales,y:{...cfg.scales.y,min:0,max:12}}}});
+  const we=arr.filter(e=>e.weight);
+  if(WC)WC.destroy();
+  WC=new Chart(document.getElementById('weightChart').getContext('2d'),{type:'line',data:{labels:we.map(e=>e.date.slice(5)),datasets:[{data:we.map(e=>parseFloat(e.weight)),borderColor:'#43e97b',backgroundColor:'rgba(67,233,123,0.08)',fill:true,tension:0.4,pointBackgroundColor:'#43e97b',pointRadius:4}]},options:cfg});
+  const bars=document.getElementById('habitBars');bars.innerHTML='';
+  HABITS.forEach(h=>{
+    const pct=Math.round((arr.filter(e=>!!e[h.id]).length/arr.length)*100);
+    const col=pct>=70?'#43e97b':pct>=40?'#ffa502':'#ff4757';
+    bars.innerHTML+=`<div class="hbar"><span class="hbar-lbl">${h.label}</span><div class="hbar-track"><div class="hbar-fill" style="width:${pct}%;background:${col}"></div></div><span class="hbar-pct">${pct}%</span></div>`;
   });
-
-  const existing = entries.findIndex(e => e.date === date);
-  if (existing >= 0) entries[existing] = entry;
-  else entries.push(entry);
-  entries.sort((a, b) => a.date.localeCompare(b.date));
-
-  renderDashboard();
-  const msg = document.getElementById('saveMsg');
-  msg.textContent = '✓ Saved!';
-  setTimeout(() => msg.textContent = '', 2000);
-}
-
-function renderDashboard() {
-  if (!entries.length) return;
-  const scores = entries.map(e => getScore(e));
-  const avg = (scores.reduce((a,b) => a+b, 0) / scores.length).toFixed(1);
-  const last = scores[scores.length - 1];
-
-  document.getElementById('statAvg').textContent = avg + ' / 12';
-  document.getElementById('statDays').textContent = entries.length;
-  document.getElementById('statLast').textContent = last + ' / 12';
-
-  // Latest weight
-  const withWeight = [...entries].reverse().find(e => e.weight);
-  document.getElementById('statWeight').textContent = withWeight ? withWeight.weight + ' kg' : '—';
-
-  // Score chart
-  const labels = entries.map(e => e.date.slice(5));
-  const ctx1 = document.getElementById('scoreChart').getContext('2d');
-  if (scoreChart) scoreChart.destroy();
-  scoreChart = new Chart(ctx1, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Score',
-        data: scores,
-        borderColor: '#7c6fff',
-        backgroundColor: 'rgba(124,111,255,0.12)',
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: '#7c6fff',
-        pointRadius: 4,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#6b6b80', font: { family: 'DM Mono', size: 10 } }, grid: { color: '#2a2a3a' } },
-        y: { min: 0, max: 12, ticks: { color: '#6b6b80', font: { family: 'DM Mono', size: 10 } }, grid: { color: '#2a2a3a' } }
-      }
-    }
-  });
-
-  // Weight chart
-  const weightEntries = entries.filter(e => e.weight);
-  const ctx2 = document.getElementById('weightChart').getContext('2d');
-  if (weightChart) weightChart.destroy();
-  weightChart = new Chart(ctx2, {
-    type: 'line',
-    data: {
-      labels: weightEntries.map(e => e.date.slice(5)),
-      datasets: [{
-        label: 'Weight (kg)',
-        data: weightEntries.map(e => parseFloat(e.weight)),
-        borderColor: '#43e97b',
-        backgroundColor: 'rgba(67,233,123,0.1)',
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: '#43e97b',
-        pointRadius: 4,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: '#6b6b80', font: { family: 'DM Mono', size: 10 } }, grid: { color: '#2a2a3a' } },
-        y: { ticks: { color: '#6b6b80', font: { family: 'DM Mono', size: 10 } }, grid: { color: '#2a2a3a' } }
-      }
-    }
-  });
-
-  // Habit bars
-  const bars = document.getElementById('habitBars');
-  bars.innerHTML = '';
-  HABITS.forEach(h => {
-    const done = entries.filter(e => !!e[h.id]).length;
-    const pct = entries.length ? Math.round((done / entries.length) * 100) : 0;
-    const color = pct >= 70 ? '#43e97b' : pct >= 40 ? '#ffa502' : '#ff4757';
-    bars.innerHTML += `
-      <div class="hbar">
-        <span class="hbar-label">${h.label}</span>
-        <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%;background:${color}"></div></div>
-        <span class="hbar-pct">${pct}%</span>
-      </div>`;
-  });
-
-  // Streak
-  let longest = 0, cur = 0;
-  entries.forEach(e => {
-    if (getScore(e) === 12) { cur++; longest = Math.max(longest, cur); } else cur = 0;
-  });
-  document.getElementById('streakVal').textContent = longest;
-
-  // History table
-  const tbody = document.getElementById('historyBody');
-  tbody.innerHTML = '';
-  [...entries].reverse().slice(0, 20).forEach(e => {
-    const s = getScore(e);
-    const cls = s >= 10 ? 'pill-green' : s >= 6 ? 'pill-yellow' : 'pill-red';
-    const topHabits = HABITS.filter(h => !!e[h.id]).slice(0, 2).map(h => h.label).join(', ') || '—';
-    tbody.innerHTML += `<tr>
-      <td>${e.date}</td>
-      <td><span class="score-pill ${cls}">${s}/12</span></td>
-      <td>${e.weight ? e.weight + ' kg' : '—'}</td>
-      <td>${topHabits}</td>
-    </tr>`;
+  let lng=0,cur=0;arr.forEach(e=>{if(score(e)===12){cur++;lng=Math.max(lng,cur);}else cur=0;});
+  document.getElementById('streakVal').textContent=lng;
+  const tb=document.getElementById('historyBody');tb.innerHTML='';
+  [...arr].reverse().slice(0,25).forEach(e=>{
+    const s=score(e);const cls=s>=10?'pg':s>=6?'py':'pr';
+    const done=HABITS.filter(h=>!!e[h.id]).map(h=>h.label).slice(0,3).join(', ')||'—';
+    tb.innerHTML+=`<tr><td>${e.date}</td><td><span class="pill ${cls}">${s}/12</span></td><td>${e.weight?e.weight+' kg':'—'}</td><td style="color:var(--muted)">${done}</td></tr>`;
   });
 }
-
-init();
+loadDate();render();
 </script>
 </body>
 </html>
